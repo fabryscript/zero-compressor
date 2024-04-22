@@ -1,35 +1,82 @@
 const ZERO = "0";
+const DOUBLE_ZERO = "00";
 
-export const compressZeros = (formattedValue: string) => {
+const countZeros = (decimalDigits: string) => {
+  // Count the leading zeros
+  let zeroCount = 0;
+  for (let i = 0; i < decimalDigits.length; i++) {
+    if (decimalDigits[i] === ZERO) {
+      zeroCount++;
+    } else {
+      break;
+    }
+  }
+
+  return zeroCount;
+};
+
+export const compressZeros = (
+  formattedValue: string,
+  hasCurrencySymbol: boolean
+) => {
   // Find the punctuation symbol marking the start of the decimal part
   const punctuationSymbol = formattedValue.match(/[.,]/g)?.pop();
+
+  const significantDigitsSubStart = hasCurrencySymbol ? 1 : 0;
+  const currencySign = hasCurrencySymbol ? formattedValue[0] : undefined;
+
+  if (!punctuationSymbol) {
+    return {
+      currencySign,
+      significantDigits: formattedValue.substring(significantDigitsSubStart),
+    };
+  }
+  // Find the index of the punctuation symbol
+  const punctIdx = formattedValue.lastIndexOf(punctuationSymbol);
 
   // If no punctuation symbol found or no zeros after it, return the original value
   if (
     !punctuationSymbol ||
-    !formattedValue.includes("0", formattedValue.indexOf(punctuationSymbol))
+    !formattedValue.includes(ZERO, formattedValue.indexOf(punctuationSymbol))
   ) {
-    return formattedValue;
+    return {
+      currencySign,
+      significantDigits: formattedValue.substring(
+        significantDigitsSubStart,
+        punctIdx
+      ),
+      zeros: 0,
+      decimalDigits: formattedValue.substring(punctIdx + 1),
+    };
   }
 
-  // Find the index of the punctuation symbol
-  const punctIdx = formattedValue.lastIndexOf(punctuationSymbol);
-
   // Extract characters after the punctuation symbol
-  const charsAfterPunct = formattedValue.slice(punctIdx + 1).split("");
+  const charsAfterPunct = formattedValue.slice(punctIdx + 1);
 
-  if (charsAfterPunct.length <= 2) return formattedValue;
+  if (charsAfterPunct.substring(0, 2) !== DOUBLE_ZERO)
+    return {
+      currencySign,
+      significantDigits: formattedValue.substring(
+        significantDigitsSubStart,
+        punctIdx
+      ),
+      zeros: 0,
+      decimalDigits: charsAfterPunct,
+    };
 
   // Count consecutive zeros
-  const zeros = charsAfterPunct.filter((char) => char === ZERO);
-  const otherDigits = charsAfterPunct.filter((char) => char !== ZERO);
+  const zerosCount = countZeros(charsAfterPunct);
+  const otherDigits = charsAfterPunct.substring(zerosCount);
 
-  const canDisplayZeros = zeros.length !== 0 || otherDigits.length !== 0;
+  const canDisplayZeros = zerosCount !== 0 || otherDigits.length !== 0;
 
   return {
-    currencySign: formattedValue[0],
-    signficantDigits: formattedValue.substring(1, punctIdx),
-    zeros: canDisplayZeros ? zeros.length - 1 : 0,
-    decimalDigits: otherDigits.join(""),
+    currencySign,
+    significantDigits: formattedValue.substring(
+      significantDigitsSubStart,
+      punctIdx
+    ),
+    zeros: canDisplayZeros ? zerosCount : 0,
+    decimalDigits: otherDigits,
   };
 };

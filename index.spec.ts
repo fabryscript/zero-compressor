@@ -1,38 +1,64 @@
-import { describe, expect, test } from "bun:test";
 import { compressZeros } from ".";
 
-const formatter = Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 12,
-});
 describe("compressZeros function", () => {
-  test("should compress consecutive zeros in decimal part", () => {
-    expect(compressZeros(formatter.format(0.000005))).toBe("$0.0_4_5");
-    expect(compressZeros(formatter.format(0.0000000001))).toBe("$0.0_8_1");
-    expect(compressZeros(formatter.format(12345.0000000002))).toBe(
-      "$12,345.0_8_2"
-    );
+  it("should correctly compress zeros when no currency symbol is present", () => {
+    expect(compressZeros("123.00", false)).toEqual({
+      currencySign: undefined,
+      significantDigits: "123",
+      zeros: 2,
+      decimalDigits: "",
+    });
   });
 
-  test("should handle different punctuation symbols", () => {
-    expect(compressZeros(formatter.format(123.00002))).toBe("$123.0_3_2");
-    expect(compressZeros(formatter.format(123.000000002))).toBe("$123.0_7_2");
+  it("should correctly compress zeros when currency symbol is present", () => {
+    expect(compressZeros("$0.00", true)).toEqual({
+      currencySign: "$",
+      significantDigits: "0",
+      zeros: 2,
+      decimalDigits: "",
+    });
   });
 
-  test("should handle no consecutive zeros", () => {
-    expect(compressZeros(formatter.format(123.45))).toBe("$123.45");
-    expect(compressZeros(formatter.format(0.123))).toBe("$0.123");
+  it("should correctly handle significant digits with leading zeros", () => {
+    expect(compressZeros("$001.2300", true)).toEqual({
+      currencySign: "$",
+      significantDigits: "001",
+      zeros: 0,
+      decimalDigits: "2300",
+    });
   });
 
-  test("should handle no decimal part", () => {
-    expect(compressZeros(formatter.format(12345))).toBe("$12,345.00");
-    expect(compressZeros(formatter.format(0))).toBe("$0.00");
+  it("should return original value if there are no zeros to compress", () => {
+    expect(compressZeros("$123.45", true)).toEqual({
+      currencySign: "$",
+      significantDigits: "123",
+      zeros: 0,
+      decimalDigits: "45",
+    });
   });
 
-  test("should handle edge cases", () => {
-    expect(compressZeros(formatter.format(0.000023))).toBe("$0.0_3_23");
-    expect(compressZeros(formatter.format(0.01))).toBe("$0.01");
-    expect(compressZeros(formatter.format(0.0))).toBe("$0.00");
+  it("should correctly handle cases with only leading zeros", () => {
+    expect(compressZeros("$00.005", true)).toEqual({
+      currencySign: "$",
+      significantDigits: "00",
+      zeros: 2,
+      decimalDigits: "5",
+    });
+  });
+
+  it("should handle cases with no decimal part", () => {
+    expect(compressZeros("$123", true)).toEqual({
+      currencySign: "$",
+      significantDigits: "123",
+    });
+  });
+
+  it("should handle cases with no significant digits", () => {
+    expect(compressZeros("$0.00", true)).toEqual({
+      currencySign: "$",
+      significantDigits: "0",
+      zeros: 2,
+      decimalDigits: "",
+    });
   });
 });
