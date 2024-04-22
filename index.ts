@@ -1,6 +1,6 @@
 const ZERO = "0";
 
-export const compressZeros = (formattedValue: string): string => {
+export const compressZeros = (formattedValue: string) => {
   console.log(formattedValue);
   // Find the punctuation symbol marking the start of the decimal part
   const punctuationSymbol = formattedValue.match(/[.,]/g)?.pop();
@@ -26,11 +26,11 @@ export const compressZeros = (formattedValue: string): string => {
   const otherDigits = charsAfterPunct.filter((char) => char !== ZERO);
 
   const canDisplayZeros = zeros.length !== 0 || otherDigits.length !== 0;
-  const zerosCount = `0_${zeros.length - 1}_`;
 
-  const compressedValue = `${formattedValue.substring(0, punctIdx + 1)}${
-    canDisplayZeros ? zerosCount : ""
-  }${otherDigits.join("")}`;
-
-  return compressedValue;
+  return {
+    currencySign: formattedValue[0],
+    signficantDigits: formattedValue.substring(1, punctIdx),
+    zeros: canDisplayZeros ? zeros.length - 1 : 0,
+    decimalDigits: otherDigits.join(""),
+  };
 };
