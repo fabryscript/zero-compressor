@@ -1,7 +1,6 @@
 const ZERO = "0";
 
 export const compressZeros = (formattedValue: string) => {
-  console.log(formattedValue);
   // Find the punctuation symbol marking the start of the decimal part
   const punctuationSymbol = formattedValue.match(/[.,]/g)?.pop();
 
